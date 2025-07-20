@@ -10,8 +10,6 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  // Configuration for Netlify deployment
-  serverExternalPackages: ['mongodb'],
 };
 
 export default nextConfig;

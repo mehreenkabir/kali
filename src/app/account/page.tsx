@@ -6,7 +6,6 @@ import Header from '@/components/Header';
 import GlobalFooter from '@/components/GlobalFooter';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import axios from 'axios'; // We will use this in the future to get user data
 
 // --- The Protected Account Page ---
 export default function AccountPage() {

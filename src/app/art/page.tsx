@@ -4,7 +4,6 @@ import Header from '@/components/Header';
 import GlobalFooter from '@/components/GlobalFooter';
 import Link from 'next/link';
 import React, { useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
 
 // --- The Main Art Page Component ---
 export default function ArtPage() {
@@ -54,10 +53,7 @@ export default function ArtPage() {
       <main className="relative z-20 flex-grow flex items-center justify-center text-center p-4 xs:p-6 sm:p-8 pt-20 xs:pt-24 sm:pt-28 md:pt-32 lg:pt-36 pb-20 xs:pb-24 sm:pb-28 md:pb-32">
         
         {/* The central message, floating above the canvas */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: "easeOut" }}
+        <div 
           className="max-w-sm xs:max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-3xl px-4"
         >
           {/* --- The Invitation (The Kiss) --- */}
@@ -78,7 +74,7 @@ export default function ArtPage() {
           >
             Begin a Collaboration
           </Link>
-        </motion.div>
+        </div>
 
       </main>
 

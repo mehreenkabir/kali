@@ -5,7 +5,6 @@
 import Header from '@/components/Header';
 import GlobalFooter from '@/components/GlobalFooter';
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -71,10 +70,7 @@ export default function ContactPage() {
         <Header />
 
         <main className="relative z-20 min-h-screen flex items-center justify-center p-3 xs:p-4 sm:p-6 pt-20 xs:pt-24 sm:pt-28 md:pt-32 lg:pt-36 pb-20 xs:pb-22 sm:pb-24">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+          <div 
             className="w-full max-w-xs xs:max-w-sm sm:max-w-md bg-white/10 backdrop-blur-xl p-4 xs:p-6 sm:p-8 md:p-12 rounded-2xl shadow-2xl border border-white/20 text-center"
           >
             <div className="mb-4 xs:mb-5 sm:mb-6">
@@ -103,7 +99,7 @@ export default function ContactPage() {
             >
               Send Another Message
             </button>
-          </motion.div>
+          </div>
         </main>
 
         <div className="relative z-30">
@@ -129,10 +125,7 @@ export default function ContactPage() {
       <Header />
 
       <main className="relative z-20 flex-grow flex items-center justify-center p-3 xs:p-4 sm:p-6 pt-20 xs:pt-24 sm:pt-28 md:pt-32 lg:pt-36 pb-20 xs:pb-24 sm:pb-28 md:pb-32">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+        <div 
           className="w-full max-w-sm xs:max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl bg-white/10 backdrop-blur-xl p-4 xs:p-5 sm:p-6 md:p-8 lg:p-12 rounded-2xl shadow-2xl border border-white/20"
         >
           <div className="text-center mb-6 xs:mb-7 sm:mb-8">
@@ -249,7 +242,7 @@ export default function ContactPage() {
               </button>
             </div>
           </form>
-        </motion.div>
+        </div>
       </main>
 
       {/* Footer with proper spacing - fixed positioning */}
