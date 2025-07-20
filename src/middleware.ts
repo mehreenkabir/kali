@@ -8,6 +8,9 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
+// Export as default as well for compatibility
+export default middleware;
+
 export const config = {
   matcher: []
 };
