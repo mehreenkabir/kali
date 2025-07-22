@@ -1,0 +1,16 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Email subdomain redirect
+[[redirects]]
+  from = "https://mail.kaliania.com/*"
+  to = "https://kaliania.com/mail/:splat"
+  status = 200
+  force = true
+
+# Headers for caching
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

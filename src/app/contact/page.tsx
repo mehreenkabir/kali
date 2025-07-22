@@ -4,6 +4,7 @@
 
 import Header from '@/components/Header';
 import GlobalFooter from '@/components/GlobalFooter';
+import { sendContactEmail, isEmailJSConfigured } from '@/lib/emailjs';
 import React, { useState } from 'react';
 
 export default function ContactPage() {
@@ -37,13 +38,47 @@ export default function ContactPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate form submission (replace with your actual email service)
     try {
-      // Here you would integrate with your email service (EmailJS, Resend, etc.)
-      console.log('Form submitted:', formData);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Save to localStorage for the mail viewer
+      const emailMessage = {
+        id: Date.now().toString(),
+        from: formData.email,
+        to: 'admin@kaliania.com',
+        subject: `New Contact: ${formData.interest ? interests.find(i => i.value === formData.interest)?.label : 'General Inquiry'}`,
+        message: formData.message,
+        interest: formData.interest ? interests.find(i => i.value === formData.interest)?.label : '',
+        timestamp: new Date().toISOString(),
+        read: false
+      };
+
+      const existingSubmissions = localStorage.getItem('contactSubmissions');
+      const submissions = existingSubmissions ? JSON.parse(existingSubmissions) : [];
+      submissions.unshift(emailMessage); // Add to beginning
+      localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
+
+      // Check if EmailJS is configured
+      if (!isEmailJSConfigured()) {
+        console.warn('EmailJS not configured - check environment variables');
+        // Fall back to API route if EmailJS not set up
+        const response = await fetch('/api/contact/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send message');
+        }
+      } else {
+        // Use EmailJS to send email directly
+        const result = await sendContactEmail(formData);
+        
+        if (!result.success) {
+          throw new Error('Failed to send email via EmailJS');
+        }
+      }
       
       setIsSubmitted(true);
     } catch (error) {
