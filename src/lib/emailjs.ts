@@ -21,7 +21,7 @@ export const sendContactEmail = async (formData: ContactFormData) => {
       from_email: formData.email,
       interest: formData.interest,
       message: formData.message,
-      to_email: 'admin@kaliania.com', // Your email
+      to_email: 'kalyanianya@gmail.com', // Your Gmail
       reply_to: formData.email
     };
 
