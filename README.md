@@ -100,4 +100,4 @@ A guide at the intersection of the spiritual and the digital.
 
 *Where Code Becomes a Sanctuary*
 
-For questions or collaborations, reach out at [admin@kaliania.com](mailto:admin@kaliania.com)
+For questions or collaborations, reach out at [admin@kaliania.com](mailto:admin@kaliania.com)# kali
