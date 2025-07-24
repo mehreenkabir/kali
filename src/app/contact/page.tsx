@@ -1,65 +1,45 @@
 // FILE: src/app/contact/page.tsx
-
 'use client';
 
 import Header from '@/components/Header';
 import GlobalFooter from '@/components/GlobalFooter';
 import { sendContactEmail, isEmailJSConfigured } from '@/lib/emailjs';
 import React, { useState } from 'react';
+import { ContactFormData } from '@/types/common';
+import { CONTACT_INTERESTS } from '@/utils/constants';
+import { findInterestByValue, createEmailMessage, saveEmailToLocalStorage } from '@/utils/helpers';
 
-export default function ContactPage() {
-  const [formData, setFormData] = useState({
+const ContactPage: React.FC = () => {
+  const [formData, setFormData] = useState<ContactFormData>({
     name: '',
     email: '',
     interest: '',
     message: ''
   });
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const interests = [
-    { value: 'yoga-sanctuary', label: 'The Sanctuary', description: 'Personalized meditation, crystal collection, and spiritual guidance' },
-    { value: 'yoga-inner-sanctum', label: 'The Inner Sanctum', description: 'Ayurvedic mastery, crystal jewelry, and aura readings' },
-    { value: 'art-collaboration', label: 'Art Collaboration', description: 'Creative projects and artistic partnerships' },
-    { value: 'math-basic', label: 'Basic Math Pack', description: 'Foundational mathematical concepts and tools' },
-    { value: 'math-premium', label: 'Premium Math Pack', description: 'Advanced mathematical exploration and problem-solving' },
-    { value: 'other', label: 'Other Inquiry', description: 'General questions or custom requests' }
-  ];
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+  const handleInputChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ): void => {
+    const { name, value } = event.target;
+    setFormData(previousFormData => ({
+      ...previousFormData,
       [name]: value
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault();
     setIsLoading(true);
 
     try {
-      // Save to localStorage for the mail viewer
-      const emailMessage = {
-        id: Date.now().toString(),
-        from: formData.email,
-        to: 'admin@kaliania.com',
-        subject: `New Contact: ${formData.interest ? interests.find(i => i.value === formData.interest)?.label : 'General Inquiry'}`,
-        message: formData.message,
-        interest: formData.interest ? interests.find(i => i.value === formData.interest)?.label : '',
-        timestamp: new Date().toISOString(),
-        read: false
-      };
+      const emailMessage = createEmailMessage(formData);
+      saveEmailToLocalStorage(emailMessage);
 
-      const existingSubmissions = localStorage.getItem('contactSubmissions');
-      const submissions = existingSubmissions ? JSON.parse(existingSubmissions) : [];
-      submissions.unshift(emailMessage); // Add to beginning
-      localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
-
-      // Check if EmailJS is configured
       if (!isEmailJSConfigured()) {
         console.warn('EmailJS not configured - check environment variables');
-        // Fall back to API route if EmailJS not set up
+        
         const response = await fetch('/api/contact/send', {
           method: 'POST',
           headers: {
@@ -72,7 +52,6 @@ export default function ContactPage() {
           throw new Error('Failed to send message');
         }
       } else {
-        // Use EmailJS to send email directly
         const result = await sendContactEmail(formData);
         
         if (!result.success) {
@@ -120,7 +99,7 @@ export default function ContactPage() {
               Message Received! 
             </h1>
             <p className="font-sans text-white/70 mb-6 xs:mb-7 sm:mb-8 leading-relaxed text-sm xs:text-base">
-              Thank you for reaching out, {formData.name}. Your inquiry about <strong>{interests.find(i => i.value === formData.interest)?.label}</strong> has been received. 
+              Thank you for reaching out, {formData.name}. Your inquiry about <strong>{findInterestByValue(formData.interest)?.label}</strong> has been received. 
               <br /><br />
               I'll respond within 24 hours with personalized guidance for your journey.
             </p>
@@ -225,7 +204,7 @@ export default function ContactPage() {
                 className="w-full px-3 xs:px-4 sm:px-6 py-2.5 xs:py-3 sm:py-4 font-sans text-sm xs:text-base text-white bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg focus:border-white/50 focus:ring-0 focus:outline-none transition-all duration-300 disabled:opacity-50"
               >
                 <option value="">Select your interest...</option>
-                {interests.map((interest) => (
+                {CONTACT_INTERESTS.map((interest) => (
                   <option key={interest.value} value={interest.value} className="bg-slate-800 text-white">
                     {interest.label}
                   </option>
@@ -233,7 +212,7 @@ export default function ContactPage() {
               </select>
               {formData.interest && (
                 <p className="mt-1.5 xs:mt-2 font-sans text-xs xs:text-sm text-white/60 italic">
-                  {interests.find(i => i.value === formData.interest)?.description}
+                  {findInterestByValue(formData.interest)?.description}
                 </p>
               )}
             </div>
@@ -282,8 +261,10 @@ export default function ContactPage() {
 
       {/* Footer with proper spacing - fixed positioning */}
       <div className="relative z-30">
-        <GlobalFooter />
+        <GlobalFooter theme="dark" />
       </div>
     </div>
   );
-}
+};
+
+export default ContactPage;

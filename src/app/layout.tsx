@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Cormorant_Garamond, Caveat, Press_Start_2P } from 'next/font/google';
 import './globals.css';
+import AuthProvider from '@/providers/AuthProvider';
 
 // Initialize fonts
 const inter = Inter({ 
@@ -44,7 +45,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true} className={`${inter.variable} ${cormorantGaramond.variable} ${caveat.variable} ${pressStart2P.variable}`}>
       <body className={`${inter.className} antialiased`} suppressHydrationWarning={true}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

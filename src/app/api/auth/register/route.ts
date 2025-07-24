@@ -1,16 +1,15 @@
-// FILE: src/app/api/auth/register/route.ts
-import { NextResponse } from 'next/server';
-import bcryptjs from 'bcryptjs';
-import { userStore } from '@/lib/simple-store';
+import { NextRequest, NextResponse } from 'next/server';
+import { createUser, getUserByEmail } from '@/lib/database';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    const body = await request.json();
+    const { email, password, name } = body;
 
     // Validation
-    if (!name || !email || !password) {
+    if (!email || !password || !name) {
       return NextResponse.json(
-        { error: 'Please provide all required fields' },
+        { error: 'Missing required fields' },
         { status: 400 }
       );
     }
@@ -24,44 +23,41 @@ export async function POST(request: Request) {
       );
     }
 
-    // Password validation
-    if (password.length < 6) {
+    if (password.length < 8) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
+        { error: 'Password must be at least 8 characters long' },
         { status: 400 }
       );
     }
 
     // Check if user already exists
-    const existingUser = userStore.findByEmail(email);
+    const existingUser = await getUserByEmail(email);
     if (existingUser) {
       return NextResponse.json(
-        { error: 'A user with this email already exists' },
-        { status: 400 }
+        { error: 'User already exists' },
+        { status: 409 }
       );
     }
 
-    // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcryptjs.hash(password, saltRounds);
-
-    // Create user
-    const newUser = userStore.create({
-      name,
-      email,
-      password: hashedPassword,
-    });
+    // Create new user
+    const user = await createUser(email, password, name);
 
     return NextResponse.json(
       { 
-        message: 'User registered successfully',
-        userId: newUser.id 
+        message: 'User created successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          subscriptionTier: user.subscription_tier,
+          subscriptionStatus: user.subscription_status
+        }
       },
       { status: 201 }
     );
 
   } catch (error) {
-    console.error('❌ Registration error:', error);
+    console.error('Registration error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

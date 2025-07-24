@@ -1,22 +1,35 @@
 {
-  "name": "portfolio",
+  "name": "portfolio-backend-dev",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:init": "node scripts/init-db.js",
+    "stripe:setup": "node scripts/setup-stripe-products.js",
+    "stripe:status": "node scripts/check-stripe-status.js",
+    "webhook:test": "node scripts/test-sanctuary-webhook.js",
+    "webhook:create": "node scripts/create-production-webhook.js"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
+    "@stripe/stripe-js": "^7.6.1",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/sqlite3": "^3.1.11",
     "bcryptjs": "^2.4.3",
+    "dotenv": "^17.2.0",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.525.0",
     "next": "15.3.5",
     "next-auth": "^4.24.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-icons": "^5.4.0"
+    "react-icons": "^5.4.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
+    "stripe": "^18.3.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
