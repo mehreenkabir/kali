@@ -35,7 +35,10 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update user subscription
-    const success = await updateUserSubscription(session.user.email, tier, status);
+    const success = await updateUserSubscription(session.user.email, {
+      subscription_tier: tier,
+      subscription_status: status
+    });
 
     if (!success) {
       return NextResponse.json(

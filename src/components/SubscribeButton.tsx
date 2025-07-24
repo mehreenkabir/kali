@@ -11,13 +11,15 @@ interface SubscribeButtonProps {
   children: React.ReactNode;
   className?: string;
   priceId?: string;
+  directCheckout?: boolean; // New prop to determine behavior
 }
 
 const SubscribeButton: React.FC<SubscribeButtonProps> = ({ 
   tier, 
   children, 
   className = '',
-  priceId 
+  priceId,
+  directCheckout = false
 }) => {
   const { data: session } = useSession();
   const router = useRouter();
@@ -30,20 +32,26 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
       return;
     }
 
-    setIsLoading(true);
-    
-    try {
-      // Use Stripe.js to redirect to checkout
-      if (priceId) {
-        await redirectToCheckout(tier, priceId);
-      } else {
-        await redirectToCheckout(tier);
+    // If directCheckout is true, go straight to Stripe
+    if (directCheckout) {
+      setIsLoading(true);
+      
+      try {
+        // Use Stripe.js to redirect to checkout
+        if (priceId) {
+          await redirectToCheckout(tier, priceId);
+        } else {
+          await redirectToCheckout(tier);
+        }
+      } catch (error) {
+        console.error('Checkout error:', error);
+        alert('Something went wrong. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Something went wrong. Please try again.');
-    } finally {
-      setIsLoading(false);
+    } else {
+      // Otherwise, redirect to subscription page for authenticated users
+      router.push('/subscribe');
     }
   };
 

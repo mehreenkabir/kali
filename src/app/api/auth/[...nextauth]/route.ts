@@ -18,7 +18,7 @@ const authOptions: NextAuthOptions = {
         try {
           const user = await getUserByEmailWithPassword(credentials.email);
           
-          if (!user) {
+          if (!user || !user.password) {
             return null;
           }
 

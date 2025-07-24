@@ -42,6 +42,13 @@ export async function POST(request: NextRequest) {
     // Create new user
     const user = await createUser(email, password, name);
 
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Failed to create user' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       { 
         message: 'User created successfully',

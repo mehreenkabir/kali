@@ -5,13 +5,13 @@ import GlobalFooter from '@/components/GlobalFooter';
 import FeatureListItem from '@/components/ui/FeatureListItem';
 import AccordionItem from '@/components/ui/AccordionItem';
 import TiltCard from '@/components/ui/TiltCard';
+import SubscribeButton from '@/components/SubscribeButton';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SubscriptionFeature } from '@/types/common';
 import { generateKey } from '@/utils/helpers';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { redirectToCheckout } from '@/lib/stripe-client';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // Subscription tier features configuration
 const SANCTUARY_FEATURES: SubscriptionFeature[] = [
@@ -59,32 +59,17 @@ const SANCTUM_FEATURES: SubscriptionFeature[] = [
 const SubscribePage: React.FC = () => {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [openSanctuaryAccordion, setOpenSanctuaryAccordion] = useState<number | null>(null);
   const [openSanctumAccordion, setOpenSanctumAccordion] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubscribe = async (tier: 'sanctuary' | 'sanctum') => {
-    if (!session) {
-      router.push('/auth/signin');
-      return;
+  // Handle canceled subscription redirect
+  useEffect(() => {
+    const canceled = searchParams.get('canceled');
+    if (canceled === 'true') {
+      router.push('/yoga');
     }
-
-    setIsLoading(true);
-    
-    try {
-      // Redirect to Stripe checkout
-      await redirectToCheckout(tier);
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Something went wrong. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const isCurrentTier = (tier: string) => {
-    return session?.user.subscriptionTier === tier && session?.user.subscriptionStatus === 'active';
-  };
+  }, [searchParams, router]);
 
   return (
     <div className="min-h-screen flex flex-col pastel-dream-gradient text-slate-800 overflow-hidden">
@@ -166,19 +151,13 @@ const SubscribePage: React.FC = () => {
                     ))}
                   </div>
                   <div className="mt-auto">
-                    <button 
-                      onClick={() => handleSubscribe('sanctuary')}
-                      disabled={isLoading || isCurrentTier('sanctuary')}
-                      className={`inline-block w-full max-w-sm mx-auto text-center font-serif tracking-widest uppercase px-6 xs:px-7 sm:px-8 py-3 xs:py-3.5 sm:py-4 text-sm xs:text-base rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-slate-500 ${
-                        isCurrentTier('sanctuary') 
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                          : 'bg-slate-700 text-white hover:bg-slate-800'
-                      }`}
+                    <SubscribeButton
+                      tier="sanctuary"
+                      directCheckout={true}
+                      className="inline-block bg-white/50 backdrop-blur-md text-slate-700 font-serif tracking-widest uppercase px-6 xs:px-8 sm:px-10 md:px-12 py-2.5 xs:py-3 sm:py-3.5 md:py-4 text-xs xs:text-sm sm:text-base rounded-full transition-all duration-300 hover:bg-white/80 hover:scale-105 hover:shadow-2xl button-glow fade-in-up focus-ring"
                     >
-                      {isLoading ? 'Processing...' : 
-                       isCurrentTier('sanctuary') ? 'Current Plan' :
-                       session ? 'Choose this Path' : 'Sign In to Subscribe'}
-                    </button>
+                      The Sanctuary
+                    </SubscribeButton>
                   </div>
                 </div>
               </TiltCard>
@@ -213,19 +192,13 @@ const SubscribePage: React.FC = () => {
                     </div>
 
                     <div className="mt-auto">
-                      <button 
-                        onClick={() => handleSubscribe('sanctum')}
-                        disabled={isLoading || isCurrentTier('sanctum')}
-                        className={`inline-block w-full max-w-sm mx-auto text-center font-serif tracking-widest uppercase px-6 xs:px-7 sm:px-8 py-3 xs:py-3.5 sm:py-4 text-sm xs:text-base rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-slate-500 button-glow ${
-                          isCurrentTier('sanctum') 
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                            : 'bg-slate-800 text-white hover:bg-slate-900'
-                        }`}
+                      <SubscribeButton
+                        tier="sanctum"
+                        directCheckout={true}
+                        className="inline-block bg-slate-800/80 backdrop-blur-md text-white font-serif tracking-widest uppercase px-6 xs:px-8 sm:px-10 md:px-12 py-2.5 xs:py-3 sm:py-3.5 md:py-4 text-xs xs:text-sm sm:text-base rounded-full transition-all duration-300 hover:bg-slate-900/90 hover:scale-105 hover:shadow-2xl button-glow fade-in-up animation-delay-200 focus-ring"
                       >
-                        {isLoading ? 'Processing...' : 
-                         isCurrentTier('sanctum') ? 'Current Plan' :
-                         session ? 'Begin the Ascent' : 'Sign In to Subscribe'}
-                      </button>
+                        The Inner Sanctum
+                      </SubscribeButton>
                     </div>
                   </div>
                 </div>

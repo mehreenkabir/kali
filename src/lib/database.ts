@@ -314,10 +314,25 @@ export async function initEnhancedDatabase(): Promise<Database<sqlite3.Database,
     )
   `);
 
+  // Create user activity tracking table
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS user_activity (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      login_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      session_count INTEGER DEFAULT 1,
+      last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes for better performance
   await db.exec(`
     CREATE INDEX IF NOT EXISTS idx_mood_entries_user_date ON mood_entries(user_email, date(timestamp));
     CREATE INDEX IF NOT EXISTS idx_journal_entries_user_date ON journal_entries(user_email, timestamp);
+    CREATE INDEX IF NOT EXISTS idx_user_activity_user_date ON user_activity(user_id, date(login_date));
+    CREATE INDEX IF NOT EXISTS idx_crystal_recommendations_user ON crystal_recommendations(user_id);
+    CREATE INDEX IF NOT EXISTS idx_jewelry_orders_user ON jewelry_orders(user_id);
   `);
 
   return db;
@@ -440,6 +455,89 @@ export async function generateCrystalRecommendations(userId: number, zodiacSign:
     }
   } catch (error) {
     console.error('Error generating crystal recommendations:', error);
+  }
+}
+
+// Update user subscription data
+export async function updateUserSubscription(email: string, subscriptionData: any): Promise<boolean> {
+  try {
+    const database = await initEnhancedDatabase();
+    
+    const result = await database.run(
+      `UPDATE users SET 
+         subscription_tier = ?, 
+         subscription_status = ?, 
+         stripe_customer_id = ?, 
+         stripe_subscription_id = ?, 
+         subscription_period_end = ?,
+         subscription_start_date = COALESCE(subscription_start_date, CURRENT_TIMESTAMP),
+         updated_at = CURRENT_TIMESTAMP 
+       WHERE email = ?`,
+      [
+        subscriptionData.subscription_tier,
+        subscriptionData.subscription_status,
+        subscriptionData.stripe_customer_id,
+        subscriptionData.stripe_subscription_id,
+        subscriptionData.subscription_period_end,
+        email
+      ]
+    );
+    
+    return (result.changes ?? 0) > 0;
+  } catch (error) {
+    console.error('Error updating user subscription:', error);
+    return false;
+  }
+}
+
+// Update user Stripe data
+export async function updateUserStripeData(email: string, stripeData: any): Promise<boolean> {
+  try {
+    const database = await initEnhancedDatabase();
+    
+    const result = await database.run(
+      `UPDATE users SET 
+         stripe_customer_id = ?, 
+         stripe_subscription_id = ?, 
+         updated_at = CURRENT_TIMESTAMP 
+       WHERE email = ?`,
+      [stripeData.stripe_customer_id, stripeData.stripe_subscription_id, email]
+    );
+    
+    return (result.changes ?? 0) > 0;
+  } catch (error) {
+    console.error('Error updating user Stripe data:', error);
+    return false;
+  }
+}
+
+// Get user by Stripe subscription ID
+export async function getUserByStripeSubscriptionId(subscriptionId: string): Promise<EnhancedUser | null> {
+  try {
+    const database = await initEnhancedDatabase();
+    const user = await database.get<EnhancedUser>(
+      `SELECT * FROM users WHERE stripe_subscription_id = ?`,
+      [subscriptionId]
+    );
+    return user || null;
+  } catch (error) {
+    console.error('Error getting user by Stripe subscription ID:', error);
+    return null;
+  }
+}
+
+// Get user by ID
+export async function getUserById(id: number): Promise<EnhancedUser | null> {
+  try {
+    const database = await initEnhancedDatabase();
+    const user = await database.get<EnhancedUser>(
+      `SELECT * FROM users WHERE id = ?`,
+      [id]
+    );
+    return user || null;
+  } catch (error) {
+    console.error('Error getting user by ID:', error);
+    return null;
   }
 }
 
