@@ -208,6 +208,58 @@ export async function initEnhancedDatabase(): Promise<Database<sqlite3.Database,
     )
   `);
 
+  // Create mood tracking table
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS mood_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      entry_date DATE NOT NULL,
+      mood TEXT NOT NULL,
+      energy_level INTEGER DEFAULT 5,
+      spiritual_state INTEGER DEFAULT 5,
+      notes TEXT,
+      gratitude TEXT,
+      intention TEXT,
+      moon_phase TEXT,
+      weather TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+      UNIQUE(user_id, entry_date)
+    )
+  `);
+
+  // Create indices for mood entries
+  await db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_mood_entries_user_date ON mood_entries(user_id, entry_date);
+    CREATE INDEX IF NOT EXISTS idx_mood_entries_date ON mood_entries(entry_date);
+  `);
+
+  // Create journal entries table
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS journal_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT,
+      tags TEXT,
+      mood TEXT,
+      spiritual_insights TEXT,
+      gratitude_notes TEXT,
+      intentions TEXT,
+      is_private BOOLEAN DEFAULT TRUE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create indices for journal entries
+  await db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_journal_entries_user_date ON journal_entries(user_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_journal_entries_user ON journal_entries(user_id);
+  `);
+
   // Insert sample crystals if table is empty
   const crystalCount = await db.get('SELECT COUNT(*) as count FROM crystals_database');
   if (crystalCount && crystalCount.count === 0) {
@@ -322,6 +374,10 @@ export async function initEnhancedDatabase(): Promise<Database<sqlite3.Database,
       login_date DATETIME DEFAULT CURRENT_TIMESTAMP,
       session_count INTEGER DEFAULT 1,
       last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
+      mood_entries INTEGER DEFAULT 0,
+      journal_entries INTEGER DEFAULT 0,
+      meditation_sessions INTEGER DEFAULT 0,
+      features_accessed TEXT,
       FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )
   `);
@@ -526,6 +582,21 @@ export async function getUserByStripeSubscriptionId(subscriptionId: string): Pro
   }
 }
 
+// Get user by Stripe customer ID
+export async function getUserByStripeCustomerId(customerId: string): Promise<EnhancedUser | null> {
+  try {
+    const database = await initEnhancedDatabase();
+    const user = await database.get<EnhancedUser>(
+      `SELECT * FROM users WHERE stripe_customer_id = ?`,
+      [customerId]
+    );
+    return user || null;
+  } catch (error) {
+    console.error('Error getting user by Stripe customer ID:', error);
+    return null;
+  }
+}
+
 // Get user by ID
 export async function getUserById(id: number): Promise<EnhancedUser | null> {
   try {
@@ -538,6 +609,152 @@ export async function getUserById(id: number): Promise<EnhancedUser | null> {
   } catch (error) {
     console.error('Error getting user by ID:', error);
     return null;
+  }
+}
+
+// Get all active users for email campaigns
+export async function getAllActiveUsers(): Promise<EnhancedUser[]> {
+  try {
+    const database = await initEnhancedDatabase();
+    const users = await database.all<EnhancedUser[]>(
+      `SELECT * FROM users 
+       WHERE subscription_status = 'active' 
+       AND email IS NOT NULL
+       ORDER BY created_at DESC`
+    );
+    return users || [];
+  } catch (error) {
+    console.error('Error getting active users:', error);
+    return [];
+  }
+}
+
+// Get user mood insights for email campaigns
+export async function getUserMoodInsights(userId: number): Promise<any> {
+  try {
+    const database = await initEnhancedDatabase();
+    
+    // Get today's entry
+    const today = new Date().toISOString().split('T')[0];
+    const todayEntry = await database.get(
+      `SELECT * FROM mood_entries 
+       WHERE user_id = ? AND DATE(entry_date) = ?`,
+      [userId, today]
+    );
+
+    // Get this week's entries
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weeklyEntries = await database.all(
+      `SELECT * FROM mood_entries 
+       WHERE user_id = ? AND entry_date >= ?
+       ORDER BY entry_date DESC`,
+      [userId, weekAgo.toISOString()]
+    );
+
+    // Calculate dominant mood
+    const moodCounts: Record<string, number> = {};
+    let totalEnergy = 0;
+    
+    weeklyEntries.forEach((entry: any) => {
+      if (entry.mood) {
+        moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
+      }
+      if (entry.energy_level) {
+        totalEnergy += entry.energy_level;
+      }
+    });
+
+    const dominantMood = Object.entries(moodCounts)
+      .sort(([,a], [,b]) => b - a)[0]?.[0] || null;
+
+    const averageEnergy = weeklyEntries.length > 0 
+      ? Math.round(totalEnergy / weeklyEntries.length) 
+      : 0;
+
+    return {
+      todayEntry,
+      weeklyEntries: weeklyEntries.length,
+      dominantMood,
+      averageEnergy,
+      totalEntries: weeklyEntries.length
+    };
+  } catch (error) {
+    console.error('Error getting user mood insights:', error);
+    return {
+      todayEntry: null,
+      weeklyEntries: 0,
+      dominantMood: null,
+      averageEnergy: 0,
+      totalEntries: 0
+    };
+  }
+}
+
+// Get user journal insights for email campaigns
+export async function getUserJournalInsights(userId: number): Promise<any> {
+  try {
+    const database = await initEnhancedDatabase();
+    
+    // Get this week's entries
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weeklyEntries = await database.all(
+      `SELECT * FROM journal_entries 
+       WHERE user_id = ? AND created_at >= ?
+       ORDER BY created_at DESC`,
+      [userId, weekAgo.toISOString()]
+    );
+
+    // Count gratitudes
+    let totalGratitudes = 0;
+    const allTags: string[] = [];
+
+    weeklyEntries.forEach((entry: any) => {
+      if (entry.gratitude_notes) {
+        try {
+          const gratitudes = JSON.parse(entry.gratitude_notes);
+          if (Array.isArray(gratitudes)) {
+            totalGratitudes += gratitudes.length;
+          }
+        } catch {}
+      }
+      
+      if (entry.tags) {
+        try {
+          const tags = JSON.parse(entry.tags);
+          if (Array.isArray(tags)) {
+            allTags.push(...tags);
+          }
+        } catch {}
+      }
+    });
+
+    // Get top tags
+    const tagCounts: Record<string, number> = {};
+    allTags.forEach(tag => {
+      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+    });
+
+    const topTags = Object.entries(tagCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([tag]) => tag);
+
+    return {
+      weeklyEntries: weeklyEntries.length,
+      totalGratitudes,
+      topTags,
+      totalEntries: weeklyEntries.length
+    };
+  } catch (error) {
+    console.error('Error getting user journal insights:', error);
+    return {
+      weeklyEntries: 0,
+      totalGratitudes: 0,
+      topTags: [],
+      totalEntries: 0
+    };
   }
 }
 

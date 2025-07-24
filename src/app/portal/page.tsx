@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import GlobalFooter from '@/components/GlobalFooter';
@@ -54,28 +55,28 @@ const PortalPage: React.FC = () => {
   // Enhanced navigation structure
   const getNavigationTabs = () => {
     const baseTabs = [
-      { id: 'overview', label: 'Overview', icon: '🏛️' },
-      { id: 'soul-profile', label: 'Soul Profile', icon: '✨' },
-      { id: 'guidance', label: 'Soul Guidance', icon: '🔮' },
-      { id: 'practice', label: 'Sacred Practice', icon: '🧘‍♀️' },
-      { id: 'mood', label: 'Daily Mood', icon: '🌈' },
-      { id: 'journal', label: 'Sacred Journal', icon: '📖' },
-      { id: 'profile', label: 'Profile', icon: '👤' }
+      { id: 'overview', label: 'Overview', icon: '🏛️', link: null },
+      { id: 'soul-profile', label: 'Soul Profile', icon: '✨', link: null },
+      { id: 'guidance', label: 'Soul Guidance', icon: '🔮', link: null },
+      { id: 'practice', label: 'Sacred Practice', icon: '🧘‍♀️', link: null },
+      { id: 'mood', label: 'Daily Mood', icon: '🌈', link: '/portal/mood' },
+      { id: 'journal', label: 'Sacred Journal', icon: '📖', link: '/portal/journal' },
+      { id: 'profile', label: 'Profile', icon: '👤', link: '/portal/profile' }
     ];
 
     const sanctuaryTabs = session?.user?.subscriptionTier === 'sanctuary' || 
                           session?.user?.subscriptionTier === 'sanctum' ? [
-      { id: 'meditations', label: 'Meditation Portal', icon: '🧘‍♀️' },
-      { id: 'akashic', label: 'Akashic Records', icon: '📜' },
-      { id: 'crystals', label: 'Crystal Guidance', icon: '💎' },
-      { id: 'tarot', label: 'Tarot Forecast', icon: '🔮' }
+      { id: 'meditations', label: 'Meditation Portal', icon: '🧘‍♀️', link: null },
+      { id: 'akashic', label: 'Akashic Records', icon: '📜', link: null },
+      { id: 'crystals', label: 'Crystal Guidance', icon: '💎', link: null },
+      { id: 'tarot', label: 'Tarot Forecast', icon: '🔮', link: null }
     ] : [];
 
     const sanctumTabs = session?.user?.subscriptionTier === 'sanctum' ? [
-      { id: 'ayurveda', label: 'Ayurvedic Path', icon: '🌿' },
-      { id: 'jewelry', label: 'Crystal Jewelry', icon: '💍' },
-      { id: 'elixir', label: 'Youth Elixir', icon: '🌸' },
-      { id: 'aura', label: 'Aura Readings', icon: '✨' }
+      { id: 'ayurveda', label: 'Ayurvedic Path', icon: '🌿', link: null },
+      { id: 'jewelry', label: 'Crystal Jewelry', icon: '💍', link: null },
+      { id: 'elixir', label: 'Youth Elixir', icon: '🌸', link: null },
+      { id: 'aura', label: 'Aura Readings', icon: '✨', link: null }
     ] : [];
 
     return [...baseTabs, ...sanctuaryTabs, ...sanctumTabs];
@@ -220,21 +221,32 @@ const PortalPage: React.FC = () => {
               <div className="bg-white/40 backdrop-blur-md rounded-2xl p-1 border border-white/60 max-w-full overflow-x-auto">
                 <div className="flex space-x-1 min-w-max portal-navigation px-2">
                   {getNavigationTabs().map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        setCurrentView(tab.id as any);
-                        // Optional: Track feature usage if needed
-                      }}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-xl font-serif text-sm transition-all duration-200 whitespace-nowrap ${
-                        currentView === tab.id 
-                          ? 'bg-white text-slate-800 shadow-sm' 
-                          : 'text-slate-600 hover:text-slate-800 hover:bg-white/30'
-                      }`}
-                    >
-                      <span className="text-base">{tab.icon}</span>
-                      <span className="hidden sm:inline">{tab.label}</span>
-                    </button>
+                    tab.link ? (
+                      <Link
+                        key={tab.id}
+                        href={tab.link}
+                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl font-serif text-sm transition-all duration-200 whitespace-nowrap text-slate-600 hover:text-slate-800 hover:bg-white/30`}
+                      >
+                        <span className="text-base">{tab.icon}</span>
+                        <span className="hidden sm:inline">{tab.label}</span>
+                      </Link>
+                    ) : (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          setCurrentView(tab.id as any);
+                          // Optional: Track feature usage if needed
+                        }}
+                        className={`flex items-center space-x-2 px-3 py-2 rounded-xl font-serif text-sm transition-all duration-200 whitespace-nowrap ${
+                          currentView === tab.id 
+                            ? 'bg-white text-slate-800 shadow-sm' 
+                            : 'text-slate-600 hover:text-slate-800 hover:bg-white/30'
+                        }`}
+                      >
+                        <span className="text-base">{tab.icon}</span>
+                        <span className="hidden sm:inline">{tab.label}</span>
+                      </button>
+                    )
                   ))}
                 </div>
               </div>
@@ -814,6 +826,30 @@ const PersonalizedOverviewView: React.FC<{
 
       {/* Personalized Quick Access */}
       <div className="grid md:grid-cols-3 gap-6">
+        <Link
+          href="/portal/mood"
+          className="bg-white/30 backdrop-blur-md rounded-2xl p-6 border border-white/40 
+                   hover:bg-white/50 transition-all text-left group block"
+        >
+          <div className="text-3xl mb-3">🌈</div>
+          <h3 className="font-serif text-xl text-slate-800 mb-2">Daily Mood</h3>
+          <p className="font-dreamy text-slate-600 text-sm">
+            Track your emotional landscape and spiritual weather
+          </p>
+        </Link>
+
+        <Link
+          href="/portal/journal"
+          className="bg-white/30 backdrop-blur-md rounded-2xl p-6 border border-white/40 
+                   hover:bg-white/50 transition-all text-left group block"
+        >
+          <div className="text-3xl mb-3">📖</div>
+          <h3 className="font-serif text-xl text-slate-800 mb-2">Sacred Journal</h3>
+          <p className="font-dreamy text-slate-600 text-sm">
+            Document your spiritual insights and reflections
+          </p>
+        </Link>
+
         <button
           onClick={() => {
             setCurrentView('soul-profile');
@@ -826,36 +862,6 @@ const PersonalizedOverviewView: React.FC<{
           <h3 className="font-serif text-xl text-slate-800 mb-2">Your Soul Profile</h3>
           <p className="font-dreamy text-slate-600 text-sm">
             Discover your archetype, soul age, and spiritual state
-          </p>
-        </button>
-
-        <button
-          onClick={() => {
-            setCurrentView('mood');
-            // Optional: Track mood tracking access
-          }}
-          className="bg-white/30 backdrop-blur-md rounded-2xl p-6 border border-white/40 
-                   hover:bg-white/50 transition-all text-left group"
-        >
-          <div className="text-3xl mb-3">🌈</div>
-          <h3 className="font-serif text-xl text-slate-800 mb-2">Daily Mood</h3>
-          <p className="font-dreamy text-slate-600 text-sm">
-            Track your emotional landscape and spiritual weather
-          </p>
-        </button>
-
-        <button
-          onClick={() => {
-            setCurrentView('journal');
-            // Optional: Track journal access
-          }}
-          className="bg-white/30 backdrop-blur-md rounded-2xl p-6 border border-white/40 
-                   hover:bg-white/50 transition-all text-left group"
-        >
-          <div className="text-3xl mb-3">📖</div>
-          <h3 className="font-serif text-xl text-slate-800 mb-2">Sacred Journal</h3>
-          <p className="font-dreamy text-slate-600 text-sm">
-            Document your spiritual insights and reflections
           </p>
         </button>
       </div>
